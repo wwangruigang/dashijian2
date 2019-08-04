@@ -72,7 +72,8 @@
                 <tfoot>
                     <tr>
                         <td colspan="3" class="text-center">
-                            <a href="#" class="btn btn-success" data-toggle="modal" data-target="#addModal">新增分类</a>
+                            <a href="#" class="btn btn-success " id="add_cat" data-toggle="modal"
+                                data-target="#addModal">新增分类</a>
                         </td>
                     </tr>
                 </tfoot>
@@ -89,13 +90,14 @@
                 </div>
                 <div class="modal-body">
                     <form>
+                        <input type="hidden" name="id" id="cataId">
                         <div class="form-group">
                             <label for="recipient-name" class="control-label">分类名称:</label>
-                            <input type="text" class="form-control" id="recipient-name">
+                            <input type="text" name="name" class="form-control" id="recipient-name">
                         </div>
                         <div class="form-group">
                             <label for="message-text" class="control-label">分类别名:</label>
-                            <input type="text" class="form-control" id="recipient-name">
+                            <input type="text" name="slug" class="form-control" id="recipient-slug">
                         </div>
                     </form>
                 </div>
@@ -118,17 +120,17 @@
             $('#addModal').modal('hide');
         });
 
-        $('#model_add').click(function () {
-            alert('add');
-            $('#addModal').modal('hide');
-        });
+        // $('#model_add').click(function () {
+        //     alert('add');
+        //     $('#addModal').modal('hide');
+        // });
 
-        $('.category_table').delegate('a', 'click', function () {
-            if ($(this).hasClass('btn-info')) {
-                $('#addModal .modal-title').html('修改分类名称');
-                $('#addModal').modal('show');
-            }
-        })      
+        // $('.category_table').delegate('a', 'click', function () {
+        //     if ($(this).hasClass('btn-info')) {
+        //         $('#addModal .modal-title').html('修改分类名称');
+        //         $('#addModal').modal('show');
+        //     }
+        // })      
     </script>
     <!-- 引入模板 -->
     <script src="./js/template-web.js"></script>
@@ -139,9 +141,9 @@
                 <td>{{v.name}}</td>
                 <td>{{v.slug}}</td>
                 <td class="text-center">
-                    <a href="javascript:editTr({&quot;id&quot;:&quot;3&quot;,&quot;slug&quot;:&quot;living&quot;,&quot;name&quot;:&quot;会生活&quot;});"
+                    <a href="#"  data_id = '{{v.id}}'
                         class="btn btn-info btn-xs">编辑</a>
-                    <a href="javascript:deleteTr( 3 );" data_ia = '{{v.id}}' class="btn btn-danger btn-xs">删除</a>
+                    <a href="#" data_id = '{{v.id}}' class="btn btn-danger btn-xs btn-delete">删除</a>
                 </td>
             </tr>
         {{/each}}
@@ -151,15 +153,142 @@
         $(function () {
             //   思路
             // 已进入页面 就发送ajax请求
-            $.ajax({
-                url: 'http://localhost:8080/admin/category/list',
-                success: function (backData) {
-                    console.log(backData);
-                    var resHtml = template('getList', backData);
-                    $('tbody').html(resHtml);
+            function getRpt() {
+                $.ajax({
+                    url: 'http://localhost:8080/admin/category/list',
+                    success: function (backData) {
+                        console.log(backData);
+                        var resHtml = template('getList', backData);
+                        $('tbody').html(resHtml);
 
+                    }
+                });
+            }
+            getRpt()
+            // 新增  种类
+            $('#model_add').click(function () {
+                if ($(this).hasClass('btn-success')) {
+                    // var cataId =  $('#cataId').val()
+                    // var rptName = $('#recipient-name').val()
+                    // var rptSlug = $('#recipient-slug').val()
+                    var Id = $('form').serialize()
+                    $.ajax({
+                        type: 'post',
+                        url: 'http://localhost:8080/admin/category/edit',
+                        data: Id,
+
+                        success: function (backData) {
+                            console.log(backData);
+                            if (backData.code == 200) {
+                                alert('修改成功')
+                                getRpt()
+                            }
+                            $('#recipient-name').val("");
+                            $('#recipient-slug').val("");
+                        }
+                    })
+
+                } else {
+                    //  思路 点击ajax 进入模态框
+                    //  获取用户的内容
+                    var rptName = $('#recipient-name').val()
+                    var rptSlug = $('#recipient-slug').val()
+                    $.ajax({
+                        type: 'post',
+                        url: 'http://localhost:8080/admin/category/add',
+                        data: {
+                            name: rptName,
+                            slug: rptSlug
+                        },
+                        success: function (backData) {
+                            console.log(backData);
+                            if (backData.code == 201) {
+
+                                alert('添加成功')
+                            }
+                            getRpt()
+                            $('#recipient-name').val("");
+                            $('#recipient-slug').val("");
+                        }
+
+                    });
+                }
+                //  获取用户输入内容
+                // 2 给模态框的新增添加时间  然后添加tr
+                // 手动关闭模态框
+                $('#addModal').modal('hide');
+            });
+
+
+
+
+
+
+
+
+            //  新增做注册事件
+            $('#add_cat').on('click', function () {
+                $('#addModal .modal-title').html('新增分类');
+                $('#model_add').text('新增').removeClass('btn-success');
+
+            })
+
+            // 编辑  注册事件
+
+            $('tbody').on('click', 'a.btn-info', function () {
+
+                $('#addModal .modal-title').html('修改分类');
+                $('#addModal').modal('show');
+
+                $('#model_add').text('修改').addClass('btn-success');
+
+                // 获取id
+                var id = $(this).attr('data_id');
+                // 发送ajax
+                $.ajax({
+                    url: 'http://localhost:8080/admin/category/search',
+                    data: {
+                        id: id
+                    },
+                    success: function (backData) {
+                        console.log(backData);
+                        $('#cataId').val(backData.data[0].id)
+                        $('#recipient-name').val(backData.data[0].name);
+                        $('#recipient-slug').val(backData.data[0].slug);
+                    }
+                })
+                $('#addModal').modal('show'); //显示模态框.
+            })
+
+
+
+            //   注册删除键事件 
+            $('tbody').on('click', 'a.btn-delete', function () {
+                //  提示是否删除
+                if (confirm('确定删除?')) {
+                    //    发送ajax请求
+                    // 获取id
+                    var id = $(this).attr('data_id');
+                    $.ajax({
+                        type: 'post',
+                        url: 'http://localhost:8080/admin/category/delete',
+                        data: {
+                            id: id
+                        },
+                        success: function (backData) {
+                            console.log(backData);
+                            if (backData.code == 204) {
+                                getRpt()
+                            }
+                        }
+                    })
                 }
             })
+
+
+
+
+
         })
 
 
