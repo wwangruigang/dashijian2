@@ -11,6 +11,8 @@
     <link rel="stylesheet" href="css/iconfont.css">
     <link rel="stylesheet" href="css/main.css">
     <script src="js/jquery-1.12.4.min.js"></script>
+    <script src="js/bootstrap/js/bootstrap.min.js"></script>
+    <script src="../../josecebe-twbs-pagination-5103bc4/jquery.twbsPagination.js" type="text/javascript"></script>
 </head>
 
 <body>
@@ -30,11 +32,11 @@
                             <option>爱旅行</option>
                         </select>
                         <select id="selStatus" name="" class="form-control input-sm">
-                            <option>所有状态</option>
-                            <option value="drafted">草稿</option>
-                            <option value="published">已发布</option>
+                            <option value="">所有状态</option>
+                            <option value="草稿">草稿</option>
+                            <option value="已发布">已发布</option>
                         </select>
-                        <button id="btnSearch" class="btn btn-default btn-sm">筛选</button>
+                        <button id="btnSearch" class="btn btn-default btn-sm btn-screen">筛选</button>
                     </form>
                 </div>
                 <div class="col-xs-6">
@@ -164,7 +166,7 @@
 
 
                         <td class="text-center">
-                            <a href="post-edit.html?id=1000" class="btn btn-default btn-xs">编辑</a>
+                            <a href="post-edit.html?id=1" class="btn btn-default btn-xs">编辑</a>
                             <a href="javascript:deleteTr( 1000 );" class="btn btn-danger btn-xs">删除</a>
                         </td>
                     </tr>
@@ -275,7 +277,7 @@
         <tr>
                 <td>{{v.title}}</td>
                 <td>{{v.author}}</td>
-                <td>{{v.cateName}}</td>
+                <td>{{v.category}}</td>
                 <td class="text-center">{{v.date}}</td>
 
 
@@ -283,58 +285,122 @@
 
 
                 <td class="text-center">
-                    <a href="post-edit.html?id=995" data_id = "{{v.id}}" class="btn btn-default btn-xs">编辑</a>
+                    <a href="article_edit.html?id={{v.id}}"  class="btn btn-default btn-xs">编辑</a>
                     <a href="#" data_id = "{{v.id}}" class="btn btn-danger btn-xs">删除</a>
                 </td>
             </tr>
         {{/each}}
+    </script>
+
+    <script id="getList" type="text/html">
+        <option value = "">所有分类</option>
+    {{each data v}}
+
+    <option value = "{{v.id}}">{{v.name}}</option>
+
+    {{/each}}
     </script>
     <script>
         // 设置左侧菜单
         $('#release_btn').click(function () {
             window.parent.setMenu(1, 1);
         })
-        var artObj = null;
-        //  发送ajax 获取所有的文章种类类型
-        $.ajax({
-            url: 'http://localhost:8080/admin/category/list',
-            success: function (backData) {
-                artObj = backData.data
-                console.log(artObj);
-            }
-        })
-
-
-
-
         $(function () {
-            // 思路进入时发送ajax请求
-            $.ajax({
-                url: 'http://localhost:8080/admin/article/query',
-                data: {
-                    state: '已发布'
-                },
-                success: function (backData) {
-                  
-                     if(backData.code == 200) {
-                        for (var i = 0; i < backData.data.data.length; i++) {
-                        for (var j = 0; j < artObj.length; j++) {
-                            if (backData.data.data[i].categoryId == artObj[j].id) {
-                                backData.data.data[i].cateName = artObj[j].name;
-                                break;
-                            }
-                        }
-                    }
-                    console.log(backData);
-                    //  模板
-                    var resHtml = template('articleList', backData);
-                    $('tbody').html(resHtml);
+            function getActAll(page, actList, Status) {
+                // 思路进入时发送ajax请求
+                $.ajax({
+                    url: 'http://localhost:8080/admin/article/query',
+                    data: {
+                        page: page,
+                        type: actList,
+                        state: Status,
+                        perpage: 8
+                    },
 
-                     }
+                    success: function (backData) {
+                        console.log(backData);
+                        if (backData.code == 200) {
+                            //  模板
+                            var resHtml = template('articleList', backData);
+                            $('tbody').html(resHtml);
+
+                            // 动态总页数 这段代码如果会一直循环的执行, 要给他一个条件.
+                            // 在筛选时返回的页码总数页码数不等的情况下猜进入
+                            // 声明变量 获取页码总数
+                            var totalPages = backData.data.totalPage;
+                            if (mytotalPages != totalPages || listOk == false) {
+                                // 给mytotalPages这个变量赋值
+                                mytotalPages = totalPages;
+                                var currentPage = $pagination.twbsPagination('getCurrentPage');
+                                $pagination.twbsPagination('destroy');
+                                // 重新渲染页码条,会自动去执行一次onPageClick事件
+                                $pagination.twbsPagination($.extend({}, defaultOpts, {
+                                    // 筛选之后页面 要从第一页开始所以要改成1
+                                    startPage: 1,
+                                    totalPages: totalPages
+                                }));
+                                listOk = true;
+                            }
+
+                        }
+
+                    }
+                });
+
+            }
+            // // 进入页面调用一次
+            // getActAll()
+
+            //   进入页面发送ajax 
+            $.ajax({
+                url: 'http://localhost:8080/admin/category/list',
+                success: function (backData) {
+                    console.log(backData);
+                    var resHtml = template('getList', backData);
+                    $('#selCategory').html(resHtml);
+
                 }
 
-            })
-        })
+            });
+            // 声明全局变量
+            var actList
+            var Status
+            // 排他思想  解决在没有改变状态的情况之下 点击筛选 内容 回到第一页, 页面不变 
+            var listOk = true
+            //  思路  给 筛选设置点击事件
+            $('.btn-screen').on('click', function (e) {
+                e.preventDefault()
+                // listOk 为false
+                listOk = false;
+                // 获取 选择框的内容
+                actList = $('#selCategory').val();
+                Status = $('#selStatus').val();
+
+                getActAll(1, actList, Status)
+            });
+            // 声明一个变量来保存总页数
+            var mytotalPages = 10;
+
+            var $pagination = $('.pagination')
+            // 思路 页码 用到插件
+            var defaultOpts = {
+                // 页码总数
+                totalPages: mytotalPages,
+                visiblePages: 8,
+                onPageClick: function (event, page) {
+                    // $('#page-content').text('Page ' + page);
+                    // page  是当前点击的页数 event 代表结构
+                    getActAll(page, actList, Status)
+                }
+            };
+
+            $pagination.twbsPagination(defaultOpts)
+
+
+
+
+
+        });
     </script>
 
 </body>

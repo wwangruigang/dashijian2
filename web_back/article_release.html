@@ -15,6 +15,12 @@
     <script src="js/jedate/js/jedate.js"></script>
     <script src="js/tinymce/js/tinymce/tinymce.min.js"></script>
     <script src="js/tinymce/js/tinymce_setup.js"></script>
+    <link type="text/css" rel="stylesheet" href="test/jeDate-test.css">
+    <link type="text/css" rel="stylesheet" href="skin/jedate.css">
+    <script type="text/javascript" src="src/jedate.js"></script>
+    <script src="../../josecebe-twbs-pagination-5103bc4/jquery.twbsPagination.js"></script>
+
+
 </head>
 
 <body>
@@ -27,19 +33,20 @@
                 <div class="form-group">
                     <label for="inputEmail3" class="col-sm-2 control-label">文章标题：</label>
                     <div class="col-sm-10">
-                        <input type="email" class="form-control" id="inputEmail3" placeholder="文章标题">
+                        <input type="text" name="title" class="form-control" id="inputEmail3" placeholder="文章标题">
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="inputPassword3" class="col-sm-2 control-label">文章封面：</label>
                     <div class="col-sm-10">
-                        <input type="file" id="exampleInputFile">
+                        <img src="./images/2.jpg" alt="" style="height: 100px" id="img2">
+                        <input type="file" name="cover" id="exampleInputFile">
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="inputEmail3" class="col-sm-2 control-label">文章类别：</label>
                     <div class="col-sm-4">
-                        <select class="form-control">
+                        <select class="form-control" name="categoryId" id="articleType">
                             <option>1</option>
                             <option>2</option>
                             <option>3</option>
@@ -51,35 +58,104 @@
                 <div class="form-group">
                     <label for="inputEmail3" class="col-sm-2 control-label">发布时间：</label>
                     <div class="col-sm-4">
-
                         <div class="input-group">
-                            <input type="text" class="form-control" placeholder="YYYY-MM-DD" id="dateinput">
-                            <span class="input-group-btn">
-                                <button class="btn btn-default" type="button"
-                                    onclick="jeDate('#dateinput',{trigger:false,format: 'YYYY-MM-DD'})"><i
-                                        class="iconfont icon-icondate"></i></button>
-                            </span>
+                            <div class="jeinpbox"><input type="text" name="date" class="jeinput" id="test15"
+                                    placeholder="YYYY-MM-DD"></div>
                         </div>
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="inputEmail3" class="col-sm-2 control-label">文章内容：</label>
                     <div class="col-sm-10">
-                        <textarea class="form-control" id="rich_content" name="content" placeholder="文章内容">
-                            Lorem ipsum dolor sit amet consectetur adipisicing elit. Assumenda fugiat illo nihil molestias ab. Laborum eius non atque, totam sapiente quae obcaecati assumenda ratione inventore pariatur maiores, qui libero delectus.
-                            </textarea>
+                        <textarea class="form-control" id="rich_content" placeholder="文章内容">
+                         阿西吧
+                        </textarea>
                     </div>
                 </div>
                 <div class="form-group">
                     <div class="col-sm-offset-2 col-sm-10">
-                        <button type="submit" class="btn btn-success">发布</button>
+                        <button type="submit" class="btn btn-success btn-release">发布</button>
                         <button type="submit" class="btn btn-default">存为草稿</button>
                     </div>
                 </div>
             </form>
         </div>
     </div>
+    <script src="./js/template-web.js"></script>
+    <script id="getList" type="text/html">
+              {{each data v}}
+                   <option value = "{{v.id}}">{{v.name}}</option>
+               {{/each}}
+    </script>
+    <script>
+        $(function () {
+            // 图片预览
+            $('#exampleInputFile').on('change', function () {
+                // 2 获取选中的图片 file
+                var fileIcon = this.files[0];
+                //  创建一个url
+                var url = URL.createObjectURL(fileIcon);
+                // 加入要显示的img
+                $('#img2').attr('src', url)
+            });
 
+            //     文章类型ajax请求
+            $.ajax({
+                url: 'http://localhost:8080/admin/category/list',
+                success: function (backData) {
+                    console.log(backData);
+                    var resHtml = template('getList', backData);
+                    $('#articleType').html(resHtml);
+
+                }
+
+            });
+
+            // 日期插件
+            // var custom = jeDate("#test19", {
+            //     format: "YYYY-MM-DD"
+            // }).setValue("2018-09-01");
+            // 或者 custom.setValue("2018-09-01");
+            //其它功能展示选择
+            jeDate("#test15", {
+                format: "YYYY-MM-DD",
+                isinitVal: true
+            });
+
+
+
+
+            //  给发布注册点击事件
+            $('.btn-release').on('click', function (e) {
+                 e.preventDefault()
+                // 创建一个 // formdata 
+                var fd = new FormData($('form')[0]);
+                // 调用方法富的方法 加到fd中
+                fd.append('content', tinyMCE.activeEditor.getContent());
+                //3.2 已发布这三个字也要追加到fd中.
+                fd.append('state', '已发布');
+                // 发送ajax请求
+                $.ajax({
+                    type: 'post',
+                    url: 'http://localhost:8080/admin/article/publish',
+                    data: fd,
+                    contentType: false,
+                    processData: false,
+                    success:function (backData) {
+                        console.log(backData);
+                        if (backData.code == 200) {
+                            alert('发布成功')
+                        }
+                    }
+
+
+                })
+            })
+
+
+        })
+
+    </script>
 </body>
 
 </html>

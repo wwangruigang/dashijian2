@@ -47,11 +47,11 @@
                     <div class="col-sm-10">
                         <img src="images/2.jpg" alt="" class="user_pic"><br>
                         <label for="exampleInputFile">
-                                <img src="./images/logo02.png" alt="">
-                            </label>
-    
+                            <img src="./images/logo02.png" alt="">
+                        </label>
+
                         <input type="file" style="display: none" name="userPic" id="exampleInputFile">
-                     
+
                     </div>
                 </div>
 
@@ -94,7 +94,7 @@
 
     <script>
         $(function () {
-            
+
             // 2 注册添加图片预览功能
             $('#exampleInputFile').on('change', function () {
                 // 图片浏览
@@ -146,14 +146,14 @@
                     success: function (backData) {
                         console.log(backData);
                         if (backData.code == 200) {
-                          alert('修改成功')
+                            alert('修改成功')
                             //      给确定键注册点击事件跳转主页
 
                             //  window.location.href = 'index.html'
                             // parent.window.location.reload();
                             $.ajax({
-                                type:'get',
-                                url:'http://localhost:8080/admin/user/info',
+                                type: 'get',
+                                url: 'http://localhost:8080/admin/user/info',
                                 success: function (backData) {
                                     console.log(backData);
                                     if (backData.code == 200) {
